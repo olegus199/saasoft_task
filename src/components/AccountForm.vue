@@ -211,8 +211,8 @@ watch(
             @change="(e) => handleInputChange<HTMLSelectElement>(e, input.type)"
             v-model="account[input.accountKey]"
         >
-          <option value="local">local</option>
-          <option value="ldap">ldap</option>
+          <option value="local">Локальная</option>
+          <option value="ldap">LDAP</option>
         </select>
         <input
             v-else-if="input.type==='text'"
