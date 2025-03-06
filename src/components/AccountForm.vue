@@ -2,9 +2,10 @@
     setup
     lang="ts"
 >
-import { IAccount, IMark } from "../types/accounts.ts";
+import { IAccount, IAccountValues, IMark } from "../types/accounts.ts";
 import { useAccountsStore } from "../stores/accountsStore.ts";
 import { computed, ref, watch } from "vue";
+import { generateErrorMsg } from "../utils/account-form-utils.ts";
 
 interface Props {
   account: IAccount;
@@ -21,11 +22,11 @@ type InputsData = {
 
 type AccountWithoutId = Omit<IAccount, "id">
 
-type Labels = Record<keyof AccountWithoutId, string>
+type FormInfo = Record<keyof AccountWithoutId, string>
 
 type InputElements = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
-const labels: Labels = {
+const labels: FormInfo = {
   accountType: "Тип записи",
   login: "Логин",
   password: "Пароль",
@@ -94,11 +95,40 @@ const inputsData = computed(() => {
   return result;
 });
 
+const inputErrors = ref<FormInfo>({
+  login: "",
+  password: "",
+  marks: "",
+  accountType: "",
+});
+
 function handleInputChange<T extends InputElements>(e: Event, inputType: InputType): void {
+  const name = (e.target as T).name as keyof IAccount;
   const value = (e.target as T).value;
+  const valueLen = value.length;
   const accountId = account.id;
 
+  // Reset input errors
+  inputErrors.value = {
+    ...inputErrors.value,
+    [name]: "",
+  };
+
   switch (inputType) {
+    case "textarea": {
+      const maxLen = 50;
+      if (valueLen > maxLen) {
+        inputErrors.value = {
+          ...inputErrors.value,
+          marks: generateErrorMsg(maxLen),
+        };
+        return;
+      }
+
+      const marksArray: IMark[] = value.split(";").map((v) => ({ text: v }));
+      accountsStore.updateAccountField<IMark[]>(accountId, "marks", marksArray);
+    }
+      break;
     case "select":
       // Set value of 'password' to null if accountType === "ldap" (and "" if === "local")
       if (value === "ldap") {
@@ -107,9 +137,20 @@ function handleInputChange<T extends InputElements>(e: Event, inputType: InputTy
         accountsStore.updateAccountField(accountId, "password", "");
       }
       break;
-    case "textarea":
-      const marksArray: IMark[] = value.split(";").map((v) => ({ text: v }));
-      accountsStore.updateAccountField<IMark[]>(account.id, "marks", marksArray);
+    case "text":
+    case "password": {
+      // Length validation
+      const maxLen = 100;
+      if ((name === "login" || name === "password") && valueLen > 100) {
+        inputErrors.value = {
+          ...inputErrors.value,
+          [name]: generateErrorMsg(maxLen),
+        };
+        return;
+      }
+
+      accountsStore.updateAccountField(accountId, name, value);
+    }
       break;
     default:
       break;
@@ -122,6 +163,13 @@ function togglePasswordVisibility(): void {
   passwordVisible.value = !passwordVisible.value;
 }
 
+watch(
+    () => accountsStore.accounts,
+    (accounts) => {
+      console.log(accounts[0]);
+    },
+    { deep: true },
+);
 </script>
 
 <template>
@@ -133,41 +181,49 @@ function togglePasswordVisibility(): void {
         :key="idx"
         class="input-container"
     >
-      <label :for="input.id">{{ labels[input.accountKey] }}</label>
-      <div v-if="input.type === 'password'">
-        <input
-            :type="passwordVisible ? 'text' : 'password'"
+      <div>
+        <label :for="input.id">{{ labels[input.accountKey] }}</label>
+        <div v-if="input.type === 'password'">
+          <input
+              :type="passwordVisible ? 'text' : 'password'"
+              :id="input.id"
+              :name="input.accountKey"
+              @input="(e) => handleInputChange<HTMLInputElement>(e, input.type)"
+              :value="input.value"
+          />
+          <button
+              type="button"
+              @click="togglePasswordVisibility"
+          >
+            <i :class="passwordVisible ? 'pi pi-eye-slash' : 'pi pi-eye'" />
+          </button>
+        </div>
+        <textarea
+            v-if="input.type === 'textarea'"
             :id="input.id"
-            v-model="account[input.accountKey]"
+            :name="input.accountKey"
+            @input="(e) => handleInputChange<HTMLTextAreaElement>(e, input.type)"
+            :value="input.value"
         />
-        <button
-            type="button"
-            @click="togglePasswordVisibility"
+        <select
+            v-else-if="input.type==='select'"
+            :id="input.id"
+            @change="(e) => handleInputChange<HTMLSelectElement>(e, input.type)"
+            v-model="account[input.accountKey]"
         >
-          <i :class="passwordVisible ? 'pi pi-eye-slash' : 'pi pi-eye'" />
-        </button>
+          <option value="local">local</option>
+          <option value="ldap">ldap</option>
+        </select>
+        <input
+            v-else-if="input.type==='text'"
+            :type="input.type"
+            :id="input.id"
+            :name="input.accountKey"
+            @input="(e) => handleInputChange<HTMLInputElement>(e, input.type)"
+            :value="input.value"
+        />
       </div>
-      <textarea
-          v-if="input.type === 'textarea'"
-          :id="input.id"
-          @input="(e) => handleInputChange<HTMLTextAreaElement>(e, input.type)"
-          :value="input.value"
-      />
-      <select
-          v-else-if="input.type==='select'"
-          :id="input.id"
-          @change="(e) => handleInputChange<HTMLSelectElement>(e, input.type)"
-          v-model="account[input.accountKey]"
-      >
-        <option value="local">local</option>
-        <option value="ldap">ldap</option>
-      </select>
-      <input
-          v-else-if="input.type==='text'"
-          :type="input.type"
-          :id="input.id"
-          v-model="account[input.accountKey]"
-      />
+      <p v-if="inputErrors[input.accountKey]">{{ inputErrors[input.accountKey] }}</p>
     </div>
   </form>
 </template>

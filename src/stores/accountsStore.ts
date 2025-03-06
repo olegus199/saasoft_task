@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { IAccount, IMark, PasswordType } from "../types/accounts.ts";
+import { IAccount, IAccountValues, IMark, PasswordType } from "../types/accounts.ts";
 import { v4 } from "uuid";
 import { watch } from "vue";
 
@@ -30,7 +30,7 @@ export const useAccountsStore = defineStore("accounts", {
       };
       this.accounts.push(account);
     },
-    updateAccountField<T extends IAccount[keyof IAccount]>(
+    updateAccountField<T extends IAccountValues>(
       id: string, field: keyof IAccount, value: T) {
       const index = this.accounts.findIndex(account => account.id === id);
       if (index > -1) {
@@ -40,6 +40,9 @@ export const useAccountsStore = defineStore("accounts", {
             break;
           case "password":
             this.accounts[index][field] = value as PasswordType;
+            break;
+          case "login":
+            this.accounts[index][field] = value as string;
             break;
           default:
             break;

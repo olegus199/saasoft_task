@@ -9,7 +9,7 @@ import { watch } from "vue";
 const accountsStore = useAccountsStore();
 
 // watch(
-//     () => accounts,
+//     () => accountsStore.accounts,
 //     (accounts) => {
 //       localStorage.setItem("accounts", JSON.stringify(accounts));
 //     },

@@ -13,3 +13,5 @@ export interface IMark {
 type AccountType = "local" | "ldap"
 
 export type PasswordType = string | null;
+
+export type IAccountValues = IAccount[keyof IAccount];
