@@ -1,8 +1,8 @@
 export interface IAccount {
   marks: IMark[];
-  type: AccountType;
+  accountType: AccountType;
   login: string;
-  password: string | null;
+  password: PasswordType;
   id: string;
 }
 
@@ -11,3 +11,5 @@ export interface IMark {
 }
 
 type AccountType = "local" | "ldap"
+
+export type PasswordType = string | null;

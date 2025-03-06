@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { IAccount } from "../types/accounts.ts";
+import { IAccount, IMark, PasswordType } from "../types/accounts.ts";
 import { v4 } from "uuid";
 import { watch } from "vue";
 
@@ -10,7 +10,7 @@ interface State {
 const initAccount: IAccount = {
   id: "",
   marks: [],
-  type: "local",
+  accountType: "local",
   login: "",
   password: "",
 };
@@ -30,15 +30,21 @@ export const useAccountsStore = defineStore("accounts", {
       };
       this.accounts.push(account);
     },
+    updateAccountField<T extends IAccount[keyof IAccount]>(
+      id: string, field: keyof IAccount, value: T) {
+      const index = this.accounts.findIndex(account => account.id === id);
+      if (index > -1) {
+        switch (field) {
+          case "marks":
+            this.accounts[index][field] = value as IMark[];
+            break;
+          case "password":
+            this.accounts[index][field] = value as PasswordType;
+            break;
+          default:
+            break;
+        }
+      }
+    },
   },
 });
-
-// const accountsStore = useAccountsStore();
-//
-// watch(
-//   () => accountsStore.accounts,
-//   (accounts) => {
-//     localStorage.setItem("accounts", JSON.stringify(accounts));
-//   },
-//   { deep: true },
-// );
