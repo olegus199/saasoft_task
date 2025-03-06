@@ -2,7 +2,7 @@
     setup
     lang="ts"
 >
-import { IAccount, IAccountValues, IMark } from "../types/accounts.ts";
+import { IAccount, IMark } from "../types/accounts.ts";
 import { useAccountsStore } from "../stores/accountsStore.ts";
 import { computed, ref, watch } from "vue";
 import { generateErrorMsg } from "../utils/account-form-utils.ts";
@@ -17,6 +17,7 @@ type InputsData = {
   id: string;
   value: string;
   type: InputType;
+  placeholder: string;
   accountKey: keyof AccountWithoutId;
 };
 
@@ -52,6 +53,7 @@ const inputsData = computed(() => {
           type: "select",
           id: accountKey + account.id,
           value,
+          placeholder: "",
           accountKey,
         };
         break;
@@ -62,6 +64,7 @@ const inputsData = computed(() => {
           type: "textarea",
           id: accountKey + account.id,
           value: marksExtracted,
+          placeholder: "xxx; yyy;",
           accountKey,
         };
       }
@@ -71,6 +74,7 @@ const inputsData = computed(() => {
           type: "text",
           id: accountKey + account.id,
           value,
+          placeholder: "логин221",
           accountKey,
         };
         break;
@@ -79,6 +83,7 @@ const inputsData = computed(() => {
           type: "password",
           id: accountKey + account.id,
           value,
+          placeholder: "сильный-пароль",
           accountKey,
         };
         break;
@@ -141,7 +146,7 @@ function handleInputChange<T extends InputElements>(e: Event, inputType: InputTy
     case "password": {
       // Length validation
       const maxLen = 100;
-      if ((name === "login" || name === "password") && valueLen > 100) {
+      if ((name === "login" || name === "password") && valueLen > maxLen) {
         inputErrors.value = {
           ...inputErrors.value,
           [name]: generateErrorMsg(maxLen),
@@ -163,13 +168,6 @@ function togglePasswordVisibility(): void {
   passwordVisible.value = !passwordVisible.value;
 }
 
-watch(
-    () => accountsStore.accounts,
-    (accounts) => {
-      console.log(accounts[0]);
-    },
-    { deep: true },
-);
 </script>
 
 <template>
@@ -181,19 +179,28 @@ watch(
         :key="idx"
         class="input-container"
     >
-      <div>
-        <label :for="input.id">{{ labels[input.accountKey] }}</label>
-        <div v-if="input.type === 'password'">
+      <div class="input-block">
+        <label
+            :for="input.id"
+            class="input-label"
+        >{{ labels[input.accountKey] }}</label>
+        <div
+            v-if="input.type === 'password'"
+            style="position: relative;"
+        >
           <input
               :type="passwordVisible ? 'text' : 'password'"
               :id="input.id"
               :name="input.accountKey"
               @input="(e) => handleInputChange<HTMLInputElement>(e, input.type)"
               :value="input.value"
+              :placeholder="input.placeholder"
+              class="input"
           />
           <button
               type="button"
               @click="togglePasswordVisibility"
+              class="toggle-password-visibility_button"
           >
             <i :class="passwordVisible ? 'pi pi-eye-slash' : 'pi pi-eye'" />
           </button>
@@ -204,12 +211,15 @@ watch(
             :name="input.accountKey"
             @input="(e) => handleInputChange<HTMLTextAreaElement>(e, input.type)"
             :value="input.value"
+            :placeholder="input.placeholder"
+            class="input input-textarea"
         />
         <select
             v-else-if="input.type==='select'"
             :id="input.id"
             @change="(e) => handleInputChange<HTMLSelectElement>(e, input.type)"
             v-model="account[input.accountKey]"
+            class="input"
         >
           <option value="local">Локальная</option>
           <option value="ldap">LDAP</option>
@@ -219,11 +229,17 @@ watch(
             :type="input.type"
             :id="input.id"
             :name="input.accountKey"
+            :placeholder="input.placeholder"
             @input="(e) => handleInputChange<HTMLInputElement>(e, input.type)"
             :value="input.value"
+            class="input"
         />
       </div>
-      <p v-if="inputErrors[input.accountKey]">{{ inputErrors[input.accountKey] }}</p>
+      <p
+          v-if="inputErrors[input.accountKey]"
+          class="input-error-msg"
+      >{{ inputErrors[input.accountKey] }}
+      </p>
     </div>
   </form>
 </template>
@@ -232,17 +248,74 @@ watch(
     scoped
     lang="scss"
 >
+@use "../mixins" as *;
+@use "../variables" as *;
+
 .account-form {
+  flex-grow: 1;
   display: flex;
+  align-content: start;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  margin-right: 1.75rem;
 }
 
 .input-container {
+  @include flex_column();
   flex-grow: 1;
-  display: flex;
-  flex-direction: column;
+}
 
-  &:not(:last-child) {
-    margin-right: 1.25rem;
+.input-block {
+  @include flex_column();
+}
+
+.input-label {
+  margin-bottom: .25rem;
+  font-size: .75rem;
+}
+
+.input {
+  width: 100%;
+  padding: .75rem;
+  font-family: "Onset", sans-serif;
+  font-size: 1rem;
+  border: 1px solid $gray;
+  border-radius: .5rem;
+  background-color: $white;
+
+  &:focus {
+    outline: none;
+    border: 1px solid $black;
+  }
+
+}
+
+select {
+  -webkit-appearance: none;
+}
+
+.input-textarea {
+  resize: none;
+  height: 2.875rem;
+}
+
+.toggle-password-visibility_button {
+  @include reset_button_defaults();
+  position: absolute;
+  top: 50%;
+  right: .75rem;
+  transform: translateY(-50%);
+
+  .pi {
+    color: $gray;
   }
 }
+
+.input-error-msg {
+  max-width: 20rem;
+  margin-top: .25rem;
+  font-size: .75rem;
+  color: $supporting_red;
+}
+
 </style>
