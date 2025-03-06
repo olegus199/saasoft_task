@@ -115,6 +115,13 @@ function handleInputChange<T extends InputElements>(e: Event, inputType: InputTy
       break;
   }
 }
+
+const passwordVisible = ref(false);
+
+function togglePasswordVisibility(): void {
+  passwordVisible.value = !passwordVisible.value;
+}
+
 </script>
 
 <template>
@@ -127,6 +134,19 @@ function handleInputChange<T extends InputElements>(e: Event, inputType: InputTy
         class="input-container"
     >
       <label :for="input.id">{{ labels[input.accountKey] }}</label>
+      <div v-if="input.type === 'password'">
+        <input
+            :type="passwordVisible ? 'text' : 'password'"
+            :id="input.id"
+            v-model="account[input.accountKey]"
+        />
+        <button
+            type="button"
+            @click="togglePasswordVisibility"
+        >
+          <i :class="passwordVisible ? 'pi pi-eye-slash' : 'pi pi-eye'" />
+        </button>
+      </div>
       <textarea
           v-if="input.type === 'textarea'"
           :id="input.id"
@@ -143,7 +163,7 @@ function handleInputChange<T extends InputElements>(e: Event, inputType: InputTy
         <option value="ldap">ldap</option>
       </select>
       <input
-          v-else
+          v-else-if="input.type==='text'"
           :type="input.type"
           :id="input.id"
           v-model="account[input.accountKey]"
