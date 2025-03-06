@@ -178,10 +178,6 @@ function togglePasswordVisibility(): void {
 >
 .account-form {
   display: flex;
-
-  &:not(:last-child) {
-    margin-bottom: 1.5rem;
-  }
 }
 
 .input-container {

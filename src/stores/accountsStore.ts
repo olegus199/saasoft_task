@@ -46,5 +46,11 @@ export const useAccountsStore = defineStore("accounts", {
         }
       }
     },
+    removeAccount(id: string) {
+      const index = this.accounts.findIndex(account => account.id === id);
+      if (index > -1) {
+        this.accounts.splice(index, 1);
+      }
+    },
   },
 });

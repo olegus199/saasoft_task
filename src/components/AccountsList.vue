@@ -6,7 +6,7 @@ import AccountForm from "./AccountForm.vue";
 import { useAccountsStore } from "../stores/accountsStore.ts";
 import { watch } from "vue";
 
-const accounts = useAccountsStore().accounts;
+const accountsStore = useAccountsStore();
 
 // watch(
 //     () => accounts,
@@ -21,11 +21,17 @@ const accounts = useAccountsStore().accounts;
   <div
       class="accounts-list"
   >
-    <AccountForm
-        v-for="(account, idx) of accounts"
-        :account="account"
+    <div
+        v-for="(account, idx) of accountsStore.accounts"
         :key="idx"
-    />
+    >
+      <AccountForm
+          :account="account"
+      />
+      <button @click="accountsStore.removeAccount(account.id)">
+        <i :class="'pi pi-trash'" />
+      </button>
+    </div>
   </div>
 </template>
 
